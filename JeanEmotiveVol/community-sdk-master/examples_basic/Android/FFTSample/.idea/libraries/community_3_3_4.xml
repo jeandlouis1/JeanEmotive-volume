@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="community-3.3.4">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/app/build/intermediates/exploded-aar/com.emotiv.sdk/community/3.3.4/res" />
+      <root url="jar://$PROJECT_DIR$/app/build/intermediates/exploded-aar/com.emotiv.sdk/community/3.3.4/jars/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.emotiv.sdk/community/3.3.4/8165e87a36409f6183247649f05e7d9b5a1defc9/community-3.3.4-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
