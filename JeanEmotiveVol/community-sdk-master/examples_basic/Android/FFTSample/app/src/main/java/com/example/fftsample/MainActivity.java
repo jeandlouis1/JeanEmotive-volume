@@ -46,9 +46,10 @@ public class MainActivity extends Activity {
 	private TextView LowBeta;
 	private TextView HighBeta;
 	private TextView Gamma;
-	private TextView engagment;
+	private TextView engagment; // calculated value
 
 	private Thread processingThread;
+    //get bluetooth permissions
 	private static final int REQUEST_ENABLE_BT = 1;
 	private static final int MY_PERMISSIONS_REQUEST_BLUETOOTH = 0;
 	private BluetoothAdapter mBluetoothAdapter;
@@ -58,7 +59,7 @@ public class MainActivity extends Activity {
 	private boolean isEnableWriteFile = false;
 	int userId;
 	private BufferedWriter motion_writer;
-	//shoud on creat?
+	//moving averages to calculate the engagement in real time.
 	private MovingAverage Theta_RA;
 	private MovingAverage Alpha_RA;
 	private MovingAverage LowBeta_RA;
@@ -70,12 +71,13 @@ public class MainActivity extends Activity {
 			IEE_DataChannel_t.IED_T8,IEE_DataChannel_t.IED_AF4};
 	String[] Name_Channel = {"AF3","T7","Pz","T8","AF4"};
 
+//**********************************************************
 	//alerts
 	private SeekBar volumeSeekbar = null;
 	private SeekBar engagmentSeekBar= null;
 	private AudioManager audioManager = null;
-	//private Vibrator vibrator;
-
+	//private Vibrator vibrator; //not for tablets
+//**********************************************************
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -113,6 +115,7 @@ public class MainActivity extends Activity {
 		HighBeta =(TextView)findViewById(R.id.textView4);
 		Gamma =(TextView)findViewById(R.id.textView5);
 		engagment = (TextView)findViewById(R.id.engagment);
+        //init size 5 buffer
 		Theta_RA = new MovingAverage(5);
 		Alpha_RA = new MovingAverage(5);
 		LowBeta_RA = new MovingAverage(5);
@@ -126,7 +129,7 @@ public class MainActivity extends Activity {
 			public void onClick(View arg0) {
 				// TODO Auto-generated method stub
 				Log.e("FFTSample","Start Write File");
-				setDataFile();
+				//setDataFile();
 				isEnableWriteFile = true;
 			}
 		});
@@ -136,7 +139,7 @@ public class MainActivity extends Activity {
 			public void onClick(View arg0) {
 				// TODO Auto-generated method stub
 				Log.e("FFTSample","Stop Write File");
-				StopWriteFile();
+                //StopWriteFile();
 				isEnableWriteFile = false;
 			}
 		});
@@ -175,104 +178,115 @@ public class MainActivity extends Activity {
 		@Override
 		public void handleMessage(Message msg) {
 			TextView[] sensors= {Theta,Alpha,LowBeta,HighBeta,Gamma};
+            //**********************************************************************************
+            //array of averages
 			MovingAverage [] averages ={Theta_RA,Alpha_RA,LowBeta_RA,HighBeta_RA,Gamma_RA};
 			switch (msg.what) {
 
-			case 0:
-				int state = IEdk.IEE_EngineGetNextEvent();
-				if (state == IEdkErrorCode.EDK_OK.ToInt()) {
-					int eventType = IEdk.IEE_EmoEngineEventGetType();
-				    userId = IEdk.IEE_EmoEngineEventGetUserId();
-					if(eventType == IEE_Event_t.IEE_UserAdded.ToInt()){
-						Log.e("SDK","User added");
-						IEdk.IEE_FFTSetWindowingType(userId, IEdk.IEE_WindowsType_t.IEE_BLACKMAN);
-						isEnablGetData = true;
-					}
-					if(eventType == IEE_Event_t.IEE_UserRemoved.ToInt()){
-						Log.e("SDK","User removed");		
-						isEnablGetData = false;
-					}
-				}
-				
-				break;
-			case 1:
-				/*Connect device with Insight headset*/
-				int number = IEdk.IEE_GetInsightDeviceCount();
-				if(number != 0) {
-					if(!lock){
-						lock = true;
-						IEdk.IEE_ConnectInsightDevice(0);
-					}
-				}
-				/**************************************/
-				/*Connect device with Epoc Plus headset*/
-//				int number = IEdk.IEE_GetEpocPlusDeviceCount();
-//				if(number != 0) {
-//					if(!lock){
-//						lock = true;
-//						IEdk.IEE_ConnectEpocPlusDevice(0,false);
-//					}
-//				}
-				/**************************************/
-				else lock = false;
-				break;
-			case 2:
-				if(motion_writer == null) return;
-				boolean goodSet = true;
-				for(int i=0; i < Channel_list.length; i++) {
-					double[] data = IEdk.IEE_GetAverageBandPowers(Channel_list[i]);
-					//sensors[i].setText("inside");
-					//sensors[2].setText("inside");
-					//Theta.setText("inside");
-					 goodSet = true;
-					if(data.length == 5){
+                case 0:
+                        int state = IEdk.IEE_EngineGetNextEvent();
+                        if (state == IEdkErrorCode.EDK_OK.ToInt()) {
+                            int eventType = IEdk.IEE_EmoEngineEventGetType();
+                            userId = IEdk.IEE_EmoEngineEventGetUserId();
+                            if(eventType == IEE_Event_t.IEE_UserAdded.ToInt()){
+                                Log.e("SDK","User added");
+                                IEdk.IEE_FFTSetWindowingType(userId, IEdk.IEE_WindowsType_t.IEE_BLACKMAN);
+                                isEnablGetData = true;
+                            }
+                            if(eventType == IEE_Event_t.IEE_UserRemoved.ToInt()){
+                                Log.e("SDK","User removed");
+                                isEnablGetData = false;
+                            }
+                        }
 
-						for (int g = 0; g < data.length; g++) {
-							if(data[g] > 100){
-								goodSet = false;
-							}
-						}
+                        break;
+                case 1:
+                    /*Connect device with Insight headset*/
+                    int number = IEdk.IEE_GetInsightDeviceCount();
+                    if(number != 0) {
+                        if(!lock){
+                            lock = true;
+                            IEdk.IEE_ConnectInsightDevice(0);
+                        }
+                    }
+                    /**************************************/
+                    /*Connect device with Epoc Plus headset*/
+    //				int number = IEdk.IEE_GetEpocPlusDeviceCount();
+    //				if(number != 0) {
+    //					if(!lock){
+    //						lock = true;
+    //						IEdk.IEE_ConnectEpocPlusDevice(0,false);
+    //					}
+    //				}
+                    /**************************************/
+                    else lock = false;
+                    break;
+    //*************************************************************************************
+                case 2:
+                    //simple basic filter
+                    //if(motion_writer == null) return;
+                    boolean goodSet = true;
+                    //get 5 samples from each EEG channels
+                    for(int i=0; i < Channel_list.length; i++) {
+                        double[] data = IEdk.IEE_GetAverageBandPowers(Channel_list[i]);
+                         goodSet = true;
 
-					}
-					if(data.length == 5){
-						try {
-							motion_writer.write(Name_Channel[i] + ",");
-							for(int j=0; j < data.length;j++){
-								addData(data[j]);
-								//if num>100   extract row
-								//use the two front sensors
-								//theta /beta drowsnyii
-								if((i==0||i==4)&& goodSet){ //af3 and af4
-							sensors[j].setText(" "+formatter.format(averages[j].next(data[j])));
-								}
-							}
-								//sensors[]
-							//set text
-							motion_writer.newLine();
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-					engagment.setText("Engagment: "+((int)(getEngagment()*100)));
-					//formatter.format(getEngagment())
+                        /*
+                        After receiving 5  samples in from a perticular channel
+                        you loop through the five and see if all points are less 100 if not you
+                        you discard the set
+                        */
+                        if(data.length == 5){
+                            for (int g = 0; g < data.length; g++) {
+                                if(data[g] > 100){
+                                    //filter out noise, value needs to be less then 100
+                                    goodSet = false;
+                                }
+                            }
 
-					if(((int)(getEngagment()*100))<100){
+                        }
+                        if(data.length == 5){
+                            try {
+                                motion_writer.write(Name_Channel[i] + ",");
+                                for(int j=0; j < data.length;j++){
+                                    addData(data[j]);
+                                    //if num>100   extract row
+                                    //use the two front sensors
+                                    //theta /beta drowsnyii
+                                    if((i==0||i==4)&& goodSet){ //af3 and af4 two front sensors
+                                sensors[j].setText(" "+formatter.format(averages[j].next(data[j])));
+                                    }
+                                }
 
-					engagmentSeekBar.setProgress(((int)(getEngagment()*100)));
-					}
-					//how about nupdate current val based on ratio
-					//if x + cuurent sound < max sound
-					//volumeSeekbar.setProgress(12-(int)(getEngagment()*10));
-					//else if engagment very smalll vibrate
-				}
-				
-				break;
-			}
+                                //set text
+                                motion_writer.newLine();
+                            } catch (IOException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                        }
+                        engagment.setText("Engagment: "+((int)(getEngagment()*100)));
+                        //formatter.format(getEngagment())
+
+                        //number <100%
+                        if(((int)(getEngagment()*100))<100){
+
+                        engagmentSeekBar.setProgress(((int)(getEngagment()*100)));
+                        }
+                        //how about nupdate current val based on ratio
+                        //if x + cuurent sound < max sound
+                        //you could write yor own volume to engagment ration
+                        volumeSeekbar.setProgress(12-(int)(getEngagment()*10));
+                        //else if engagment very smalll vibrate
+                    }
+
+                    break;
+            }
 
 		}
 
 	};
+//******************************************************************************************
 
 	@Override
 	public void onRequestPermissionsResult(int requestCode,
