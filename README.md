@@ -1,12 +1,13 @@
-# JeanEmotive-volume
-work in progress
-control android device volume based on engagement 
-Using Emotive insight EEG headset to control the volume of the music on an android device based on the user’s engagement.
+# JeanEmotive-Android-EEG-Volume-Control
+work in progress_
+
+Control Android device volume based on engagement value from BCI device._
+Using Emotive insight EEG headset to control the volume of the music on an android device based on the user’s engagement._
 
 It features three main parts: signal acquisition, signal filtering, command execution.
 
 ## Filter
-This example is built on the Emotive Community SDK Android FFT sample. The FFT sample pulls raw EEG and normalize it. In this code the EEG bands were used to calculate the engagement( beta/(alpha+Theta)) of a user. To continuously calculate engagement a rolling average of 5 samples are taken from 2 electrodes, af3 and af4. This example only uses two of the five electrodes to cut down on noise.
+This example is built on the [Emotive Community SDK Android FFT sample](https://github.com/Emotiv/community-sdk). The FFT sample pulls EEG signals and normalize it. In this code the EEG bands were used to calculate the engagement( beta/(alpha+Theta)) of a user. To continuously calculate engagement a rolling average of 5 samples are taken from 2 electrodes, af3 and af4. This example only uses two of the five electrodes to cut down on noise.
 
 ```java
 for (int g = 0; g < data.length; g++) {
@@ -17,7 +18,7 @@ for (int g = 0; g < data.length; g++) {
 }
 ```
 
-##Engagment Equation
+## Engagment Equation
 
 A sample of five is thrown out if one of the values is greater than 100, it counts as noise. From the new 5 the new average is calculated for that electrode. For the engagement equatation
 
@@ -37,7 +38,7 @@ public double getEngagment(){
 }
 ```
 
-##AudioManager
+## AudioManager
 After the level of engagement is calculated, the volume seek bar is move with a given ratio. The movement triggers the on data-change listener and the Audio manger adjust the volume accordingly.
 
 ```java 
@@ -47,13 +48,13 @@ After the level of engagement is calculated, the volume seek bar is move with a 
             }
             //how about nupdate current val based on ratio
             //if x + cuurent sound < max sound
-            //you could write yor own volume to engagment ration
+            //you could write yor own volume to engagment ratio
             volumeSeekbar.setProgress(12-(int)(getEngagment()*10));
             //else if engagment very smalll vibrate
       
 ```
 
-##onProgressChanged
+## onProgressChanged
 ```java
 audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 volumeSeekbar.setMax(audioManager
@@ -74,11 +75,13 @@ public void onProgressChanged(SeekBar arg0, int progress, boolean arg2)
 }
 ```
 
-##Summery
-1. filter out numbers that are to high
-2. calculate real time engagement running means of signals
-3. adjust the volume seek bar with a desired ratio/ speed to change the volume with respect to engagement
+## Summery
+1. Filter out numbers that are to high (>100)
+2. Calculate real time engagement via running means of signals
+3. Adjust the volume seek bar with a desired ratio/speed to change the volume with respect to engagement
+
+Code snip from  
+JeanEmotiveVol/community-sdk-master/examples_basic/Android/FFTSample/app/src/main/java/com/example/fftsample/MainActivity.java
 
 [learn more about AudioManager](https://developer.android.com/reference/android/media/AudioManager.html)
-[Emotiv community-sdk](https://github.com/Emotiv/community-sdk)
 
