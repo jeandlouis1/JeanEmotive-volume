@@ -1,8 +1,8 @@
 # JeanEmotive-Android-EEG-Volume-Control
-work in progress_
+work in progress <br />
 
-Control Android device volume based on engagement value from BCI device._
-Using Emotive insight EEG headset to control the volume of the music on an android device based on the user’s engagement._
+Control Android device volume based on engagement value from BCI device. <br />
+Using Emotive insight EEG headset to control the volume of the music on an android device based on the user’s engagement. <br />
 
 It features three main parts: signal acquisition, signal filtering, command execution.
 
@@ -80,7 +80,7 @@ public void onProgressChanged(SeekBar arg0, int progress, boolean arg2)
 2. Calculate real time engagement via running means of signals
 3. Adjust the volume seek bar with a desired ratio/speed to change the volume with respect to engagement
 
-Code snip from  
+Code snip from <br />
 JeanEmotiveVol/community-sdk-master/examples_basic/Android/FFTSample/app/src/main/java/com/example/fftsample/MainActivity.java
 
 [learn more about AudioManager](https://developer.android.com/reference/android/media/AudioManager.html)
